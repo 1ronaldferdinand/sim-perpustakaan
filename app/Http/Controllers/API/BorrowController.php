@@ -16,7 +16,7 @@ class BorrowController extends Controller
         $borrow = BorrowModel::where('borrow.is_deleted', 0)
             ->leftjoin('book', 'book.book_id', '=', 'borrow.book_id')
             ->leftjoin('member', 'member.member_id', '=', 'borrow.member_id')
-            ->groupBy('borrow.borrow_id')
+            ->groupBy('borrow.member_id')
             ->orderBy('borrow.borrow_start', 'desc')
             ->get();
         $response = ApiFormatter::createJson(200, 'Get Data Success', $borrow);
