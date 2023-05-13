@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\WriterController;
+use App\Http\Controllers\API\MemberController;
 use App\Http\Controllers\API\PublisherController;
 
 /*
@@ -36,11 +37,11 @@ Route::group(['prefix'=>'publisher'], function(){
     Route::post('/delete/{id}', [PublisherController::class, 'delete']); 
 });
 
-Route::group(['prefix'=>'publisher'], function(){
-    Route::get('/', [PublisherController::class, 'index']);
-    Route::get('/{id}', [PublisherController::class, 'show']);
-    Route::post('/add', [PublisherController::class, 'store']);
-    Route::post('/edit/{id}', [PublisherController::class, 'update']);
-    Route::post('/delete/{id}', [PublisherController::class, 'delete']); 
+Route::group(['prefix'=>'member'], function(){
+    Route::get('/', [MemberController::class, 'index']);
+    Route::get('/{id}', [MemberController::class, 'show']);
+    Route::post('/add', [MemberController::class, 'store']);
+    Route::post('/edit/{id}', [MemberController::class, 'update']);
+    Route::post('/delete/{id}', [MemberController::class, 'delete']); 
 });
 

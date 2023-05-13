@@ -14,7 +14,7 @@ class MemberController extends Controller
 {
     public function index()
     {
-        $members = MemberModel::where('is_deleted', 0)->orderyBy('member_name', 'asc')->get();
+        $members = MemberModel::where('is_deleted', 0)->orderBy('member_name', 'asc')->get();
         $response = ApiFormatter::createJson(200, 'Get Data Success', $members);
         return $response;
     }
@@ -92,7 +92,7 @@ class MemberController extends Controller
         return $response;
     }
 
-    public function destroy($id)
+    public function delete($id)
     {
         $member = MemberModel::where('member_id', $id)->first();
         $member->is_deleted = 1;
