@@ -25,7 +25,7 @@ class BookController extends Controller
 
         $validator = Validator::make($post, [
             'book_name'=> 'required',
-            'isbn'=> 'unique:book',
+            'isbn'=> 'required|unique:book',
             'publisher_id'=> 'required',
             'writer_id'=> 'required',
             'book_type'=> 'required',
@@ -74,7 +74,7 @@ class BookController extends Controller
 
         $validator = Validator::make($post, [
             'book_name'=> 'required',
-            'isbn'=> 'unique:book',
+            'isbn'=> 'required',
             'publisher_id'=> 'required',
             'writer_id'=> 'required',
             'book_type'=> 'required',
