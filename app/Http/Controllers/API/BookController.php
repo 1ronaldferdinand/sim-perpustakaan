@@ -14,7 +14,10 @@ class BookController extends Controller
 {
     public function index()
     {
-        $books = BookModel::where('is_deleted', 0)->orderBy('book_name', 'asc')->get();
+        $books = BookModel::where('book.is_deleted', 0)
+            ->leftjoin('publisher', 'publisher.publisher_id', '=', 'book.publisher_id')
+            ->leftjoin('writer', 'writer.writer_id', '=', 'book.writer_id')
+            ->orderBy('book_name', 'asc')->get();
         $response = ApiFormatter::createJson(200, 'Get Data Success', $books);
         return $response;
     }
@@ -39,8 +42,6 @@ class BookController extends Controller
             $response = ApiFormatter::createJson(400, 'Input Error', $errors);
             return $response;
         };
-
-        $image = "";
 
         $book = BookModel::create([
             'book_id' => Uuid::uuid1()->toString(),
