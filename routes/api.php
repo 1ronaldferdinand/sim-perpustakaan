@@ -35,3 +35,12 @@ Route::group(['prefix'=>'publisher'], function(){
     Route::post('/edit/{id}', [PublisherController::class, 'update']);
     Route::post('/delete/{id}', [PublisherController::class, 'delete']); 
 });
+
+Route::group(['prefix'=>'publisher'], function(){
+    Route::get('/', [PublisherController::class, 'index']);
+    Route::get('/{id}', [PublisherController::class, 'show']);
+    Route::post('/add', [PublisherController::class, 'store']);
+    Route::post('/edit/{id}', [PublisherController::class, 'update']);
+    Route::post('/delete/{id}', [PublisherController::class, 'delete']); 
+});
+
