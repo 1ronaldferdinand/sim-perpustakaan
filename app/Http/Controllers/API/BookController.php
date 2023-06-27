@@ -65,6 +65,11 @@ class BookController extends Controller
     public function show($id)
     {
         $book = BookModel::where('book_id', $id)->first();
+        if(!$book){
+            $response = ApiFormatter::createJson(404, 'Data Not Found', null);
+            return $response;
+        }
+
         $response = ApiFormatter::createJson(200, 'Get Detail Success', $book);
         return $response;
     }
@@ -120,6 +125,11 @@ class BookController extends Controller
     public function delete($id)
     {
         $book = BookModel::where('book_id', $id)->first();
+        if(!$book){
+            $response = ApiFormatter::createJson(404, 'Data Not Found', null);
+            return $response;
+        }
+
         $book->is_deleted = 1;
         $book->save();
 
