@@ -57,5 +57,9 @@ Route::group(['prefix'=>'book'], function(){
 
 Route::group(['prefix'=>'borrow'], function(){
     Route::get('/', [BorrowController::class, 'index']);
+    Route::get('/{id}', [BorrowController::class, 'show']);
     Route::post('/add', [BorrowController::class, 'borrow']);
+    Route::post('/edit/{id}', [BorrowController::class, 'update']);
+    Route::post('/return/{id}', [BorrowController::class, 'return']);
+    Route::post('/delete/{id}', [BorrowController::class, 'delete']);
 });
