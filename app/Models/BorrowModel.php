@@ -19,4 +19,16 @@ class BorrowModel extends Model
         'borrow_start',
         'borrow_end'
     ];
+
+    // Define the relationship with the "book" table
+    public function book()
+    {
+        return $this->belongsTo(BookModel::class, 'book_id');
+    }
+
+    // Define the relationship with the "member" table
+    public function member()
+    {
+        return $this->belongsTo(MemberModel::class, 'member_id');
+    }
 }
