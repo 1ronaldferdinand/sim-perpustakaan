@@ -7,14 +7,28 @@ use Illuminate\Http\Request;
 use App\Models\MemberModel;
 use App\Helpers\ApiFormatter;
 use Illuminate\Support\Facades\Validator;
-use Member;
 use Ramsey\Uuid\Uuid;
 
 class MemberController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $members = MemberModel::where('is_deleted', 0)->orderBy('member_name', 'asc')->get();
+        $search    = $request->search;
+        $sort      = $request->sort?? 'member_name';
+        $sort_type = $request->sort_type?? 'asc';
+
+        $query = MemberModel::where('is_deleted', 0);
+
+        if(!empty($search)){
+            $query->where(function ($q) use ($search){
+                $q->where('member_name','LIKE','%'.$search.'%');
+                $q->orWhere('member_email','LIKE','%'.$search.'%');
+                $q->orWhere('member_phone','LIKE','%'.$search.'%');
+            });
+        }
+
+        $members = $query->orderBy($sort, $sort_type)->paginate(10);
+        
         $response = ApiFormatter::createJson(200, 'Get Data Success', $members);
         return $response;
     }
@@ -51,7 +65,12 @@ class MemberController extends Controller
 
     public function show($id)
     {
-        $member = MemberModel::where('member_id', $id)->first();
+        $member = MemberModel::where('member_id', $id)->where('is_deleted', 0)->first();
+
+        if(empty($member)){
+            return ApiFormatter::createJson(404, 'Member not found');
+        }
+
         $response = ApiFormatter::createJson(200, 'Get Detail Success', $member);
         return $response;
     }
@@ -94,7 +113,12 @@ class MemberController extends Controller
 
     public function delete($id)
     {
-        $member = MemberModel::where('member_id', $id)->first();
+        $member = MemberModel::where('member_id', $id)->where('is_deleted', 0)->first();
+
+        if(empty($member)){
+            return ApiFormatter::createJson(404, 'Member not found');
+        }
+
         $member->is_deleted = 1;
         $member->save();
 

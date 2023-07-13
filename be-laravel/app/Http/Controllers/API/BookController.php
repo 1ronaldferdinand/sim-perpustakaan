@@ -12,12 +12,27 @@ use Ramsey\Uuid\Uuid;
 
 class BookController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $books = BookModel::where('book.is_deleted', 0)
-            ->leftjoin('publisher', 'publisher.publisher_id', '=', 'book.publisher_id')
-            ->leftjoin('writer', 'writer.writer_id', '=', 'book.writer_id')
-            ->orderBy('book_name', 'asc')->get();
+        $search    = $request->search;
+        $sort      = $request->sort?? 'book_name';
+        $sort_type = $request->sort_type?? 'asc';
+
+        $query     = BookModel::where('book.is_deleted', 0)
+                                ->leftjoin('publisher', 'publisher.publisher_id', '=', 'book.publisher_id')
+                                ->leftjoin('writer', 'writer.writer_id', '=', 'book.writer_id');
+
+        if(!empty($query)){
+            $query->where(function ($q) use ($search){
+                $q->where('book_name', 'LIKE', '%'.$search.'%');
+                $q->orWhere('book_type', 'LIKE', '%'.$search.'%');
+                $q->orWhere('publisher_name', 'LIKE', '%'.$search.'%');
+                $q->orWhere('writer_name', 'LIKE', '%'.$search.'%');
+            });
+        }
+
+        $books     = $query->orderBy($sort, $sort_type)->paginate(10); 
+        
         $response = ApiFormatter::createJson(200, 'Get Data Success', $books);
         return $response;
     }
@@ -64,7 +79,7 @@ class BookController extends Controller
 
     public function show($id)
     {
-        $book = BookModel::where('book_id', $id)->first();
+        $book = BookModel::where('book_id', $id)->where('is_deleted', 0)->first();
         if(!$book){
             $response = ApiFormatter::createJson(404, 'Data Not Found', null);
             return $response;

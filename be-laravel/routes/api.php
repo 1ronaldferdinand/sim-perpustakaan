@@ -7,6 +7,7 @@ use App\Http\Controllers\API\BorrowController;
 use App\Http\Controllers\API\WriterController;
 use App\Http\Controllers\API\MemberController;
 use App\Http\Controllers\API\PublisherController;
+use App\Http\Controllers\API\UserController;
 
 /*
 |--------------------------------------------------------------------------

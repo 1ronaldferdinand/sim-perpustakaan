@@ -16,12 +16,24 @@ class BorrowController extends Controller
 {
     public function index(Request $request)
     {
+        $search    = $request->search;
         $sort_type = $request->sort_type;
-        $sort_name = $request->sort_name;
+        $sort_name = $request->sort;
 
         $query     = BorrowModel::Select('*')
             ->where('is_deleted', 0)
             ->with('member', 'book');
+
+        if(!empty($search)){
+            $query->where(function ($q) use ($search){
+                $q->orWhere('status', 'LIKE', '%'.$search.'%');
+                $q->orWhere('member.member_name', 'LIKE', '%'.$search.'%');
+                $q->orWhere('member.member_phone', 'LIKE', '%'.$search.'%');
+                $q->orWhere('member.member_email', 'LIKE', '%'.$search.'%');
+                $q->orWhere('book.book_name', 'LIKE', '%'.$search.'%');
+                $q->orWhere('book.book_type', 'LIKE', '%'.$search.'%');
+            });
+        }
 
         if($sort_name != null | $sort_type != null){
             $columns        = Schema::getColumnListing('borrow'); // Mendapatkan daftar kolom dari tabel borrow
@@ -39,8 +51,7 @@ class BorrowController extends Controller
 
         $borrow = $query->get();
 
-        $response = ApiFormatter::createJson(200, 'Get Data Success', $borrow);
-        return $response;
+        return ApiFormatter::createJson(200, 'Get Data Success', $borrow);
     }
 
     public function borrow(Request $request)
@@ -56,21 +67,22 @@ class BorrowController extends Controller
 
         if($validator->fails()){
             $errors = $validator->errors()->all();
-            $response = ApiFormatter::createJson(400, 'Input Error', $errors);
-            return $response;
+            return ApiFormatter::createJson(400, 'Input Error', $errors);
         }
 
         $today = Carbon::now();
         if($post['borrow_end'] <= $today){
-            $response = ApiFormatter::createJson(400, 'Borrow end date must be after this day');
-            return $response;
+            return ApiFormatter::createJson(400, 'Input Error', 'Borrow end date must be after this day');
         }
 
-        $books = BookModel::Where('book_id', '=', $post['book_id'])->first();
+        $books = BookModel::Where('book_id', '=', $post['book_id'])->where('is_deleted', 0)->first();
+
+        if(empty($books)){
+            return ApiFormatter::createJson(400, 'Input Error', 'Book not found');
+        }
+
         if($books->book_stock < $post['borrow_amount']){
-            $errors = "Book stock is not enough";
-            $response = ApiFormatter::createJson(400, 'Input Error', $errors);
-            return $response;
+            return ApiFormatter::createJson(400, 'Input Error', 'Book stocks is not enough');
         }
         
         $borrow = BorrowModel::create([
@@ -86,16 +98,9 @@ class BorrowController extends Controller
             'book_stock' => $books->book_stock - $borrow->borrow_amount,
         ]);
 
-        $response = ApiFormatter::createJson(201, 'Input Data Success', $borrow);
-        return $response;
+        return ApiFormatter::createJson(201, 'Input Data Success', $borrow);
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function show($id)
     {
         $borrow = BorrowModel::where('borrow_id', $id)
@@ -104,16 +109,20 @@ class BorrowController extends Controller
                             ->first();
 
         if($borrow == null){
-            $response = ApiFormatter::createJson(404, 'Data is not found');
-            return $response;
+            return ApiFormatter::createJson(404, 'Data is not found');
         }
 
-        $response = ApiFormatter::createJson(200, 'Get Detail Success', $borrow);
-        return $response;
+        return ApiFormatter::createJson(200, 'Get Detail Success', $borrow);
     }
 
     public function update(Request $request, $id)
     {
+        $borrow = BorrowModel::where('borrow_id', $id)->where('is_deleted', 0)->first();
+
+        if($borrow == null){
+            return ApiFormatter::createJson(404, 'Data is not found');
+        }
+
         $post = $request->all();
 
         $validator = Validator::make($post, [
@@ -125,33 +134,26 @@ class BorrowController extends Controller
 
         if($validator->fails()){
             $errors = $validator->errors()->all();
-            $response = ApiFormatter::createJson(400, 'Input Error', $errors);
-            return $response;
+            return ApiFormatter::createJson(400, 'Input Error', $errors);
         }
 
         $today = Carbon::now();
 
         if($post['borrow_end'] <= $today){
-            $response = ApiFormatter::createJson(400, 'Borrow end date must be after this day');
-            return $response;
+            return ApiFormatter::createJson(400, 'Input Error', 'Borrow end date must be after this day');
         }
 
-        $borrow = BorrowModel::where('borrow_id', $id)->first();
+        $books = BookModel::Where('book_id', '=', $post['book_id'])->where('is_deleted', 0)->first();
 
-        if($borrow == null){
-            $response = ApiFormatter::createJson(404, 'Data is not found');
-            return $response;
+        if(empty($books)){
+            return ApiFormatter::createJson(400, 'Input Error', 'Book not found');
         }
-
-        $books = BookModel::Where('book_id', '=', $post['book_id'])->first();
         
         if($borrow->borrow_amount != $post['borrow_amount']){ 
             $oldAmount = $borrow->amount;
 
             if($books->book_stock < $post['borrow_amount']){
-                $errors = "Book stock is not enough";
-                $response = ApiFormatter::createJson(400, 'Input Error', $errors);
-                return $response;
+                return ApiFormatter::createJson(400, 'Input Error', 'Book stock is not enough');
             }
 
             $books->update([
@@ -166,15 +168,13 @@ class BorrowController extends Controller
         $borrow->borrow_end = $post['borrow_end'];
         $borrow->save();
 
-        $response = ApiFormatter::createJson(200, 'Update data success', $borrow);
-        return $response;
+        return ApiFormatter::createJson(200, 'Update data success', $borrow);
     }
 
     public function return($id){
         $borrow = BorrowModel::where('borrow_id', $id)->first();
         if($borrow == null){
-            $response = ApiFormatter::createJson(404, 'Data is not found');
-            return $response;
+            return ApiFormatter::createJson(404, 'Data is not found');
         }
 
         $borrow->status = "return";
@@ -185,16 +185,14 @@ class BorrowController extends Controller
             'book_stock' => $books->book_stock + $borrow->borrow_amount,
         ]); 
 
-        $response = ApiFormatter::createJson(200, 'Return Data Success', null);
-        return $response;
+        return ApiFormatter::createJson(200, 'Return Data Success', null);
     }
 
     public function delete($id)
     {
-        $borrow = BorrowModel::where('borrow_id', $id)->first();
+        $borrow = BorrowModel::where('borrow_id', $id)->where('is_deleted', 0)->first();
         if($borrow == null){
-            $response = ApiFormatter::createJson(404, 'Data is not found');
-            return $response;
+            return ApiFormatter::createJson(404, 'Data is not found');
         }
         
         $books = BookModel::where('book_id', $borrow->book_id)->first();
@@ -205,7 +203,6 @@ class BorrowController extends Controller
         $borrow->is_deleted = 1;
         $borrow->save();
 
-        $response = ApiFormatter::createJson(200, 'Delete Data Success', null);
-        return $response;
+        return ApiFormatter::createJson(200, 'Delete Data Success', null);
     }
 }

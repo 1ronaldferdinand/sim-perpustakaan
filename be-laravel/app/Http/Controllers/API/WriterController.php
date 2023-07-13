@@ -11,9 +11,24 @@ use Ramsey\Uuid\Uuid;
 
 class WriterController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $data = WriterModel::where('is_deleted', 0)->orderBy('writer_name', 'asc')->get();
+        $search = $request->search;
+        $sort   = $request->sort?? 'writer_name';
+        $sort_type = $request->sort_type?? 'asc';
+
+        $query = WriterModel::where('is_deleted', 0);
+
+        if(!empty($search)){
+            $query->where(function ($q) use ($search){
+                $q->where('writer_name', 'LIKE', '%'.$search.'%');
+                $q->orWhere('writer_phone', 'LIKE', '%'.$search.'%');
+                $q->orWhere('writer_email', 'LIKE', '%'.$search.'%');
+            });
+        }
+        
+        $data = $query->orderBy($sort, $sort_type)->paginate(10);
+
         $response = ApiFormatter::createJson(200, 'Get Data Success', $data);
         return $response;
     }
